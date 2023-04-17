@@ -41,3 +41,22 @@ export const save_book = gql`
     }
   }
 `;
+
+export const remove_book = gql`
+  mutation removeBook($bookId: String!) {
+    removeBook(bookId: $bookId) {
+      username
+      email
+      bookCount
+      savedBooks {
+        authors
+        description
+        bookId
+        image
+        link
+        title
+      }
+    }
+  }
+`;
+Footer
