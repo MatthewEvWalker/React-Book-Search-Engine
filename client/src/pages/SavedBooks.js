@@ -9,11 +9,15 @@ import {
 
 import { getMe, deleteBook } from '../utils/API';
 import Auth from '../utils/auth';
+import { remove_Book } from '..utils/mutations'
 import { removeBookId } from '../utils/localStorage';
+import { useQuery, useMutation } from "@apollo/react-hooks"
+
 
 const SavedBooks = () => {
   const [userData, setUserData] = useState({});
-
+  const { loading, data } = useQuery(getMe)
+  const [deleteBook] = useMutation(remove_Book)
   // use this to determine if `useEffect()` hook needs to run again
   const userDataLength = Object.keys(userData).length;
 
@@ -51,14 +55,22 @@ const SavedBooks = () => {
     }
 
     try {
-      const response = await deleteBook(bookId, token);
+      // const response = await deleteBook(bookId, token);
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
-      }
+      await deleteBook({
+        variables: {bookId: bookId},
+        update: cache => {
+          const data = cache.readQuery({ query: getMe });
+          const userDataCache = data.me;
+          const savedBooksCache = userDataCache.savedBooks;
+          const updatedBookCache = savedBooksCache.filter((book) => book.bookId !== bookId);
+          data.me.savedBooks = updatedBookCache;
+          cache.writeQuery({ query: GET_ME , data: {data: {...data.me.savedBooks}}})
+        }
+      });
 
-      const updatedUser = await response.json();
-      setUserData(updatedUser);
+      // const updatedUser = await response.json();
+      // setUserData(updatedUser);
       // upon success, remove book's id from localStorage
       removeBookId(bookId);
     } catch (err) {
